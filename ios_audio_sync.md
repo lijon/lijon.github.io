@@ -12,13 +12,22 @@ The idea is that in each render buffer, you check where you *should be* at the e
 
 Call the host beatAndTempoProc callback, that you have cached in a variable.
 Take the beat time it returns and add the number of beats that fits in the current buffer according to the tempo you got from the callback.
+
 Note that the tempo might fluctuate and be different for each render cycle, for example if the host is in turn syncing to Link or something else that makes it do slight adjustments for each buffer.
 
+This is expected, and it's important that the tempo reported in the callback is the exact tempo for this very buffer. That's how you can know where your beat time will be at the end of the buffer!
+
+Even if the host is not syncing with Link, but only using Link as the clock, there will be slight jitter on most 32-bit devices between mSampleTime and mHostTime. Since Link is based on mHostTime, you'll see fluctuating tempos.
+
+You can apply smoothing to the reported IAA host tempo for displaying to the user.
+
 ## Link
+
 Call ABLLinkBeatTimeAtHostTime(), passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
 You can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer.
 
-## Towards the next beat time
+## Advance towards target beat time
+
 Then you need a way to get there in a nice way. It might be enough to just change the playback rate/speed.
 More advanced techniques might involve time stretching.
 
@@ -28,7 +37,7 @@ If your app is sensitive to jitter, you might want to smooth the rate of change,
 
 ## Detect if host provides IAA sync
 
-```objc
+```
 HostCallbackInfo callbackInfo;
 callbackInfo.hostUserData = NULL;
 UInt32 dataSize = sizeof(HostCallbackInfo);

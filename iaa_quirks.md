@@ -31,6 +31,8 @@ One way to fix it might be to check the timestamp and do the main render code fr
 
 Another way that might work is to use render notify callbacks. Will a pre-render notify always happen before *all* render callbacks (including other apps) or only our own? I haven’t investigated this yet.
 
+----
+
 # Avoiding IAA zombie nodes
 
 The favorite IAA bug that makes node apps unable to load in a host, often showing a message that the user needs to manually launch the app, force-close it, and then try again.
