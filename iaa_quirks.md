@@ -9,7 +9,7 @@ A node app can have several RemoteIO units for multiple outputs or filter ports.
 
 With multiple ports, I mean actually having individual units, so that your app can output simultaneously on each port. Then you can simply check which unit is passed to the IsInterAppConnected callback to know which unit got (dis)connected.
 
-When using a single RemoteIO unit for multiple AudioComponentDescriptions, you can get the ACD like this to see which one was used to connect:
+If you're instead using a single RemoteIO unit for multiple AudioComponentDescriptions, you can get the ACD like this to see which one was used to connect:
 
 ```
 AudioComponentDescription acd;
@@ -24,11 +24,11 @@ When connecting multiple ports, and then disconnecting one of them, an iOS bug (
 
 To avoid this, we need to restart the unit on disconnection. Once such a unit has been connected, it must stay running until the app has been fully disconnected on all ports. Note that IAA automatically stops the unit on disconnection.
 
-Note that if such an aux unit is running while unconnected, you must mute the buffers in it or it will play through from mic to speaker, causing feedback.
+IMPORTANT: If such an aux unit is running while unconnected, you must mute the buffers in it or it will play through from mic to speaker, causing feedback.
 
 Also note that the same thing applies to the “main” IAA port if the app has one. It must be restarted on disconnection, then check if you should really stop it, and don’t stop if extra IAA ports still connected.
 
-So the rule of thumb is: never stop a RIO unit that was previously connected if there are any other units currently connected.
+So the rule of thumb is: *never stop a RIO unit that was previously connected if there are any other units currently connected*.
 
 ## Render callback ordering
 

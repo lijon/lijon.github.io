@@ -3,7 +3,7 @@ title: IAA and sample rates
 layout: default
 ---
 
-# IAA and sample rates
+# Host sample rate
 
 The RIO unit of the node has a client side (for the node) and the “outer" side (host, or hardware if not connected to host)
 
@@ -21,6 +21,8 @@ static void UpdateHostSampleRate(AudioUnit unit) {
     hostSampleRate = asbd.mSampleRate;
 }
 ```
+
+## Detect SR changes
 
 The host might change SR after connection. When an IAA host changes sample rate, it must uninitialize all the hosted nodes, change their stream format to use the new SR, and then initialize it again. The IAA node sees this as a disconnect-reconnect, at least most of the times.
 

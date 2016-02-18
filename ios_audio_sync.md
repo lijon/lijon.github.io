@@ -24,7 +24,20 @@ On the other hand, nodes might find it more useful or expect a stable tempo here
 
 However, even with a stable tempo, nodes must be able to handle some jitter in the beat time. The guessed beatTimeAtEndOfBuffer will not always align with the next beatTimeAtStartOfBuffer (current host beat time).
 
-### Jitter
+## Link
+
+Call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
+
+You can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer.
+
+## Advance towards target beat time
+
+Then you need a way to get there in a nice way. It might be enough to just change the playback rate/speed.
+More advanced techniques might involve time stretching.
+
+If the jump from your current beat time is too big, or going backwards, then you should handle this by relocating to the correct beat position. The beat time can and will go backwards, when the host rewinds or when Link waits for the phase to reach the next sync quantum.
+
+## Jitter
 
 On most 32-bit devices between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Link is based on mHostTime, you'll see fluctuations in exact tempo per buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
 
@@ -40,20 +53,6 @@ rate += diff * alpha;
 rateRemain = diff * (1.0-alpha);
 // now use rate here
 ```
-
-## Link
-
-Call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
-
-You can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer.
-
-## Advance towards target beat time
-
-Then you need a way to get there in a nice way. It might be enough to just change the playback rate/speed.
-More advanced techniques might involve time stretching.
-
-If the jump from your current beat time is too big, or going backwards, then you should handle this by relocating to the correct beat position. The beat time can and will go backwards, when the host rewinds or when Link waits for the phase to reach the next sync quantum.
-
 
 ## Detect if host provides IAA sync
 
