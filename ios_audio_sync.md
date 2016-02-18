@@ -43,7 +43,7 @@ rateRemain = diff * (1.0-alpha);
 
 ## Link
 
-Call ABLLinkBeatTimeAtHostTime(), passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
+Call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
 
 You can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer.
 
