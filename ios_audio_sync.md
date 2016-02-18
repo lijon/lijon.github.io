@@ -1,5 +1,6 @@
 ---
 title: iOS Audio Sync
+layout: default
 ---
 
 # IAA/AU host sync vs Ableton Link sync

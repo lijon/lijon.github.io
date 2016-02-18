@@ -1,5 +1,6 @@
 ---
 title: Developer Documents
+layout: default
 ---
 
 # iOS Audio Developer Notes
