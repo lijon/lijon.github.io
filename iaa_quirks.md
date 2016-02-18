@@ -7,6 +7,17 @@ title: IAA quirks
 
 A node app can have several RemoteIO units for multiple outputs or filter ports.
 
+With multiple ports, I mean actually having individual units, so that your app can output simultaneously on each port. Then you can simply check which unit is passed to the IsInterAppConnected callback to know which unit got (dis)connected.
+
+When using a single RemoteIO unit for multiple AudioComponentDescriptions, you can get the ACD like this to see which one was used to connect:
+
+```
+AudioComponentDescription acd;
+UInt32 dataSize = sizeof(acd);
+AudioUnitGetProperty(inUnit, kAudioOutputUnitProperty_NodeComponentDescription,
+    kAudioUnitScope_Global, 0, &acd, &dataSize);
+```
+
 ## MACH_RCV_TIMED_OUT bug
 
 When connecting multiple ports, and then disconnecting one of them, an iOS bug (still present in 9.3 beta) makes the still-connected port block the audio thread for several seconds and then the unit stops working, returning MACH_RCV_TIMED_OUT from AudioUnitRender().
@@ -41,9 +52,11 @@ The issue is that if a hosted node is never actually shown in foreground and the
 
 The solution is to let the node app kill itself when stopping audio if it was not active since last connection.
 
+By terminating itself, the app makes sure that it will not be running without being visible in the multi-task view. If the app zombies or becomes unloadable after being in foreground, user can still easily see the app and swipe it out, which is a lot better than having an invisible process running. Audiobus 2 handled this simply by forcing the node app to come to foreground by switching to it after connection, which can be quite annoying when loading many apps at once. (And IAA by itself has no standard for switching back to host, even if it would be possible for the node to open the host URL when coming foreground after becoming connected to host.)
+
 An IAA node should check if it should stop its audio when backgrounded, and when disconnected from IAA host, and when memberOfActiveAudiobusSession turns false.
 
-```obj-c
+```
 // in app delegate
 
 NSTimeInterval appLastActiveTime = 0;
