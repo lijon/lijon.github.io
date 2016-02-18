@@ -15,7 +15,7 @@ This is done by adding our additional delay to the mHostTime of the timestamp pa
 
 IMPORTANT: the mHostTime shall never go backwards compared to the last call, or weird stuff will happen. To avoid this, clip the hostTime so that it always increments by at least half a buffer duration until it catches up:
 
-```
+```c
 AudioTimeStamp t = *inTimeStamp;
 t.mHostTime = MAX(
     lastAudioTimestamp + bufferDurationHostTicks/2,
@@ -34,7 +34,7 @@ However, in my [AUM](http://kymatica.com/aum) and [AUFX](http://kymatica.com/auf
 
 ## From node
 
-```
+```c
 void SendLatencyToHost(AudioUnit unit, UInt32 latencyFrames) {
     UInt32 event = (latencyFrames<<8)|0xFF;
     UInt32 dataSize = sizeof(event);
@@ -52,6 +52,7 @@ If your IAA effect node introduces latency, I recommend you implement the above 
 
 In the host, handle the remote control events like this:
 
+```obj-c
     typedef void (^LatencyReportBlock)(UInt32 latency);
 
      -(OSStatus) setRemoteControlEventListenerForAudioUnit:(AudioUnit)unit
@@ -83,5 +84,6 @@ In the host, handle the remote control events like this:
                                &block,
                                sizeof(block));
     }
+```
 
 You would call `setRemoteControlEventListenerForAudioUnit` on the IAA node unit before initializing it, also passing in a block that is called to report the latency.

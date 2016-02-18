@@ -13,7 +13,7 @@ The node can detect this and follow the host sample rate, or it could ignore it 
 
 IAA host gives current time in samples. Since node and host might run at different sample rates, we must use the host SR for converting to seconds.
 
-```
+```c
 static void UpdateHostSampleRate(AudioUnit unit) {
     AudioStreamBasicDescription asbd = {0,};
     UInt32 dataSize = sizeof(asbd);
@@ -28,7 +28,7 @@ The host might change SR after connection. When an IAA host changes sample rate,
 
 So we should use a property listener on this property:
 
-```
+```c
 static void StreamFormatCallback(void *inRefCon, AudioUnit inUnit, AudioUnitPropertyID inID, AudioUnitScope inScope, AudioUnitElement inElement) {
     if(inScope == kAudioUnitScope_Output && inElement == 0) {
         UpdateHostSampleRate(inUnit);
@@ -38,7 +38,7 @@ static void StreamFormatCallback(void *inRefCon, AudioUnit inUnit, AudioUnitProp
 
 And add the property listener when setting up IAA for our main audio unit:
 
-```
+```c
 AudioUnitAddPropertyListener(unit, kAudioUnitProperty_StreamFormat, StreamFormatCallback, self);
 ```
 

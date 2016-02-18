@@ -43,7 +43,7 @@ On most 32-bit devices between `mSampleTime` and `mHostTime` of the timestamp pa
 
 If your app is sensitive to jitter, you might want to smooth the rate of change, but in such a way that no change is lost, only accumulated and spread over a longer time period. For example:
 
-```
+```c
 Float64 rate = stableTempo; // ideal rate
 Float64 syncRate = actualTempo; // synchronized rate
 // rateRemain is an accumulator for change not yet used
@@ -56,7 +56,7 @@ rateRemain = diff * (1.0-alpha);
 
 ## Detect if host provides IAA sync
 
-```
+```c
 HostCallbackInfo callbackInfo;
 callbackInfo.hostUserData = NULL;
 UInt32 dataSize = sizeof(HostCallbackInfo);
