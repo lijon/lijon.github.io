@@ -11,10 +11,11 @@ With multiple ports, I mean actually having individual units, so that your app c
 
 If you're instead using a single RemoteIO unit for multiple AudioComponentDescriptions, you can get the ACD like this to see which one was used to connect:
 
-```
+```objc
 AudioComponentDescription acd;
 UInt32 dataSize = sizeof(acd);
-AudioUnitGetProperty(inUnit, kAudioOutputUnitProperty_NodeComponentDescription,
+AudioUnitGetProperty(inUnit, 
+    kAudioOutputUnitProperty_NodeComponentDescription,        
     kAudioUnitScope_Global, 0, &acd, &dataSize);
 ```
 
@@ -56,7 +57,7 @@ By terminating itself, the app makes sure that it will not be running without be
 
 An IAA node should check if it should stop its audio when backgrounded, and when disconnected from IAA host, and when memberOfActiveAudiobusSession turns false.
 
-```
+```objc
 // in app delegate
 
 NSTimeInterval appLastActiveTime = 0;
@@ -77,16 +78,19 @@ extern NSTimeInterval appLastActiveTime;
     if(appLastConnectedTime > appLastActiveTime) {
         NSLog(@"App not active since last connection, maybe cleaning up to avoid IAA zombie process.");
 
-        // Sometimes if the host crashed, the node doesn’t get the disconnect event until woken up.
+        // Sometimes if the host crashed, the node doesn’t get
+        // the disconnect event until woken up.
         // So make sure we’re not being reconnected before exiting!
-        // Unfortunately the sleep is needed, so we must keep our audio running while sleeping.
+        // Unfortunately the sleep is needed, so we must keep our
+        // audio running while sleeping.
 
         self.muted = YES;
         AudioOutputUnitStart(mainAudioUnit);
         sleep(1);
         UInt32 connected;
         UInt32 dataSize = sizeof(UInt32);
-        AudioUnitGetProperty(mainAudioUnit, kAudioUnitProperty_IsInterAppConnected,
+        AudioUnitGetProperty(mainAudioUnit,
+            kAudioUnitProperty_IsInterAppConnected,
             kAudioUnitScope_Global, 0, &connected, &dataSize);
 
         if(!connected) {
@@ -106,7 +110,9 @@ extern NSTimeInterval appLastActiveTime;
         appLastConnectedTime = [NSDate timeIntervalSinceReferenceDate];
         [self startAudioEngine];
     } else {
-        AudioOutputUnitStart(mainAudioUnit); // IAA bug workaround, it will be stopped again in maybeStop if needed.
+        // IAA bug workaround: restart unit here.
+        // It will be stopped again in maybeStop if needed.
+        AudioOutputUnitStart(mainAudioUnit);
         [self maybeStop];
     }
 }

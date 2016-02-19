@@ -15,7 +15,7 @@ This is done by adding our additional delay to the mHostTime of the timestamp pa
 
 IMPORTANT: the mHostTime shall never go backwards compared to the last call, or weird stuff will happen. To avoid this, clip the hostTime so that it always increments by at least half a buffer duration until it catches up:
 
-```c
+```objc
 AudioTimeStamp t = *inTimeStamp;
 t.mHostTime = MAX(
     lastAudioTimestamp + bufferDurationHostTicks/2,
@@ -34,11 +34,14 @@ However, in my [AUM](http://kymatica.com/aum) and [AUFX](http://kymatica.com/auf
 
 ## From node
 
-```c
-void SendLatencyToHost(AudioUnit unit, UInt32 latencyFrames) {
+```objc
+void SendLatencyToHost(AudioUnit unit,
+    UInt32 latencyFrames)
+{
     UInt32 event = (latencyFrames<<8)|0xFF;
     UInt32 dataSize = sizeof(event);
-    AudioUnitSetProperty(unit, kAudioOutputUnitProperty_RemoteControlToHost,
+    AudioUnitSetProperty(unit, 
+        kAudioOutputUnitProperty_RemoteControlToHost,
         kAudioUnitScope_Global, 0, &event, dataSize);
 }
 ```
@@ -53,11 +56,16 @@ If your IAA effect node introduces latency, I recommend you implement the above 
 In the host, handle the remote control events like this:
 
 ```obj-c
-    typedef void (^LatencyReportBlock)(UInt32 latency);
+typedef void (^LatencyReportBlock)(UInt32 latency);
 
-     -(OSStatus) setRemoteControlEventListenerForAudioUnit:(AudioUnit)unit
-        latencyReportBlock:(LatencyReportBlock)latencyReportBlock {
-        AudioUnitRemoteControlEventListener block = ^(AudioUnitRemoteControlEvent event) {
+-(OSStatus) setRemoteControlEventListenerForAudioUnit:
+    (AudioUnit)unit
+    latencyReportBlock:
+    (LatencyReportBlock)latencyReportBlock
+{
+    AudioUnitRemoteControlEventListener block = 
+    ^(AudioUnitRemoteControlEvent event)
+    {
         dispatch_async(dispatch_get_main_queue(), ^{
             switch (event) {
                 case kAudioUnitRemoteControlEvent_TogglePlayPause:
@@ -76,14 +84,12 @@ In the host, handle the remote control events like this:
                     break;
             }
         });
-        };
-        return AudioUnitSetProperty(unit,
-                               kAudioUnitProperty_RemoteControlEventListener,
-                               kAudioUnitScope_Global,
-                               0,
-                               &block,
-                               sizeof(block));
-    }
+    };
+    return AudioUnitSetProperty(unit,
+        kAudioUnitProperty_RemoteControlEventListener,
+        kAudioUnitScope_Global,
+        0, &block, sizeof(block));
+}
 ```
 
 You would call `setRemoteControlEventListenerForAudioUnit` on the IAA node unit before initializing it, also passing in a block that is called to report the latency.

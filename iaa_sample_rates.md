@@ -13,11 +13,13 @@ The node can detect this and follow the host sample rate, or it could ignore it 
 
 IAA host gives current time in samples. Since node and host might run at different sample rates, we must use the host SR for converting to seconds.
 
-```c
+```objc
 static void UpdateHostSampleRate(AudioUnit unit) {
     AudioStreamBasicDescription asbd = {0,};
     UInt32 dataSize = sizeof(asbd);
-    AudioUnitGetProperty(unit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &asbd, &dataSize);
+    AudioUnitGetProperty(unit,
+        kAudioUnitProperty_StreamFormat,
+        kAudioUnitScope_Output, 0, &asbd, &dataSize);
     hostSampleRate = asbd.mSampleRate;
 }
 ```
@@ -30,8 +32,11 @@ NOTE: Using the AVAudioSession route-change notification to update the sample ra
 
 So we should use a property listener on this property:
 
-```c
-static void StreamFormatCallback(void *inRefCon, AudioUnit inUnit, AudioUnitPropertyID inID, AudioUnitScope inScope, AudioUnitElement inElement) {
+```objc
+static void StreamFormatCallback(void *inRefCon,
+    AudioUnit inUnit, AudioUnitPropertyID inID,
+    AudioUnitScope inScope, AudioUnitElement inElement)
+{
     if(inScope == kAudioUnitScope_Output && inElement == 0) {
         UpdateHostSampleRate(inUnit);
     }
@@ -40,8 +45,10 @@ static void StreamFormatCallback(void *inRefCon, AudioUnit inUnit, AudioUnitProp
 
 And add the property listener when setting up IAA for our main audio unit:
 
-```c
-AudioUnitAddPropertyListener(unit, kAudioUnitProperty_StreamFormat, StreamFormatCallback, self);
+```objc
+AudioUnitAddPropertyListener(unit, 
+    kAudioUnitProperty_StreamFormat,
+    StreamFormatCallback, (__bridge void * _Nullable)(self));
 ```
 
 You would also call `UpdateHostSampleRate(inUnit)` when connected, a good time is when getting the other data such as HostCallbackInfo and host icon.
