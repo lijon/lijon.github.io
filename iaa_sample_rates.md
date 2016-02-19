@@ -26,6 +26,8 @@ static void UpdateHostSampleRate(AudioUnit unit) {
 
 The host might change SR after connection. When an IAA host changes sample rate, it must uninitialize all the hosted nodes, change their stream format to use the new SR, and then initialize it again. The IAA node sees this as a disconnect-reconnect, at least most of the times.
 
+NOTE: Using the AVAudioSession route-change notification to update the sample rate *does not* work reliable. It works when plugging headphones and audio interfaces in/out, but most often not when the host changes sample rate. The technique used here catches all situations, also when plugging hardware.
+
 So we should use a property listener on this property:
 
 ```c
