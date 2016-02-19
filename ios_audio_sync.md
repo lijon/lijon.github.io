@@ -76,10 +76,18 @@ To detect if host provides IAA sync or not, use the following code. You could ca
 
 ```objc
 HostCallbackInfo callbackInfo; // global or instance variable
+
 callbackInfo.hostUserData = NULL;
 UInt32 dataSize = sizeof(HostCallbackInfo);
-AudioUnitGetProperty(unit, kAudioUnitProperty_HostCallbacks, kAudioUnitScope_Global, 0, &callbackInfo, &dataSize);
-BOOL hostProvidesBeatSync = callbackInfo.hostUserData && callbackInfo.beatAndTempoProc(callbackInfo.hostUserData,NULL,NULL) == noErr;
+
+AudioUnitGetProperty(unit,
+    kAudioUnitProperty_HostCallbacks,
+    kAudioUnitScope_Global, 0,
+    &callbackInfo, &dataSize);
+
+BOOL hostProvidesBeatSync = callbackInfo.hostUserData
+    && callbackInfo.beatAndTempoProc(callbackInfo.hostUserData,
+        NULL, NULL) == noErr;
 ```
 
 
