@@ -55,7 +55,7 @@ If your IAA effect node introduces latency, I recommend you implement the above 
 
 In the host, handle the remote control events like this:
 
-```obj-c
+```objc
 typedef void (^LatencyReportBlock)(UInt32 latency);
 
 -(OSStatus) setRemoteControlEventListenerForAudioUnit:
