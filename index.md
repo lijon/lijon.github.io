@@ -16,4 +16,3 @@ How to handle flexible sample rates.
 
 [IAA latency compensation](/iaa_latency_comp.html)  
 A solution for latency reporting.
-
