@@ -57,7 +57,7 @@ On most 32-bit devices between `mSampleTime` and `mHostTime` of the timestamp pa
 
 If your app is sensitive to jitter, you might want to smooth the rate of change, but in such a way that no change is lost, only accumulated and spread over a longer time period. For example:
 
-```c
+```objc
 Float64 rate = stableTempo; // ideal rate
 Float64 syncRate = actualTempo; // synchronized rate
 // rateRemain is an accumulator for change not yet used
@@ -74,7 +74,7 @@ In my opinion, an app should use IAA sync if available, else fall back to Link i
 
 To detect if host provides IAA sync or not, use the following code. You could call this directly after being connected to host, on the main thread, at the same time as you anyway cache the host callbackInfo to a variable for use in the render callback.
 
-```c
+```objc
 HostCallbackInfo callbackInfo; // global or instance variable
 callbackInfo.hostUserData = NULL;
 UInt32 dataSize = sizeof(HostCallbackInfo);
