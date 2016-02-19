@@ -53,7 +53,7 @@ If the jump from your current beat time is too big, or going backwards, then you
 
 ## Jitter
 
-On most 32-bit devices between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Link is based on `mHostTime`, you'll see fluctuations in the incrementations of the beat time, and thus also in the calculated precise tempo for each buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
+On most 32-bit devices there's jitter between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Link is based on `mHostTime`, you'll see fluctuations in the incrementations of the beat time, and thus also in the calculated precise tempo for each buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
 
 If your app is sensitive to jitter, you might want to smooth the rate of change, but in such a way that no change is lost, only accumulated and spread over a longer time period. For example:
 
