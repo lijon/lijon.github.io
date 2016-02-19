@@ -17,7 +17,12 @@
 	<header>
 		<a href="/">^lijon.github.io</a>		
            <h1>{{ page.title }}</h1>
-           <p>Jonatan Liljedahl {{ site.time | date_to_string }}		
+           <p>Jonatan Liljedahl {{ site.time | date_to_string }}	        	<div class="share-page">
+    Share this page on
+    <a href="https://twitter.com/intent/tweet?text={{ page.title }}&url={{ site.url }}{{ page.url }}&via={{ site.twitter_username }}&related={{ site.twitter_username }}" rel="nofollow" target="_blank" title="Share on Twitter">Twitter</a>,
+    <a href="https://facebook.com/sharer.php?u={{ site.url }}{{ page.url }}" rel="nofollow" target="_blank" title="Share on Facebook">Facebook</a>,
+    <a href="https://plus.google.com/share?url={{ site.url }}{{ page.url }}" rel="nofollow" target="_blank" title="Share on Google+">Google+</a>
+</div>
          </header>
 
 <!--	<section id="downloads" class="clearfix">		

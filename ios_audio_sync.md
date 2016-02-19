@@ -10,23 +10,29 @@ The idea is that in each render buffer, you check where you *should be* at the e
 
 ## Host sync
 
-Call the host beatAndTempoProc callback that you have cached in a variable.
+At the start of each render cycle, call the host beatAndTempoProc callback that you have cached in a variable. You must call this in the render callback (audio thread), not the main thread!
 
 Take the beat time it returns and add the number of beats that fits in the current buffer according to the tempo you got from the callback.
 
-Note that the tempo might fluctuate and be different for each render cycle, for example if the host is in turn syncing to Link or something else that makes it do slight adjustments for each buffer.
+The given tempo should just be used as an indication of where the beatTime will be at the end of the buffer, there's no guarantee that this will be precisely correct.
 
-This is expected, I believe it's important that the tempo reported in the callback is the exact tempo for this very buffer. That's how you can know where your beat time will be at the end of the buffer!
+At the next render cycle, you know where you are and again you guess where you should be at the end of the buffer.
 
-You can apply smoothing to the reported IAA host tempo for displaying to the user.
+Note that the tempo might fluctuate and be different for each render cycle, or it might be stable and smoothed. The fluctuations might come because the host is in turn syncing to something else, like Ableton Link or MIDI clock.
 
-On the other hand, nodes might find it more useful or expect a stable tempo here, and just use the beat time and tempo to "guess" where it should be at the end of the buffer. It would then guess again next buffer, and so on. I'm not 100% sure of what's the best thing to do here, and individual hosts and nodes will most probably handle this differently.
+You can apply smoothing to the reported IAA host tempo if you need to assure a non-fluctuating tempo.
 
-However, even with a stable tempo, nodes must be able to handle some jitter in the beat time. The guessed beatTimeAtEndOfBuffer will not always align with the next beatTimeAtStartOfBuffer (current host beat time).
+My mixer and host app [AUM](http://kymatica.com/aum) currently sends a fluctuating tempo that is the precise tempo for the current buffer. But this will probably change in the next update, since many IAA node apps might not be ready for this.
+
+However, even with a stable tempo, nodes must be able to handle jitter in the beat time. The guessed beat time for end of buffer will not always align with the reported beat time you get during the next render cycle.
 
 ## Link
 
-Call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
+With [Ableton Link](http://ableton.github.io/linkkit/), you call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
+
+This way, you already get the precise beat time for the end of the buffer (or actually the start of the next buffer).
+
+Also with link, the beat time will not advance in exact equal increments, even when the tempo is fixed. This is because of small adjustments Link does to keep all the peers in sync.
 
 You can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer.
 
@@ -39,7 +45,7 @@ If the jump from your current beat time is too big, or going backwards, then you
 
 ## Jitter
 
-On most 32-bit devices between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Link is based on mHostTime, you'll see fluctuations in exact tempo per buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
+On most 32-bit devices between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Link is based on `mHostTime`, you'll see fluctuations in the incrementations of the beat time, and thus also in the calculated precise tempo for each buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
 
 If your app is sensitive to jitter, you might want to smooth the rate of change, but in such a way that no change is lost, only accumulated and spread over a longer time period. For example:
 
@@ -56,14 +62,16 @@ rateRemain = diff * (1.0-alpha);
 
 ## Detect if host provides IAA sync
 
+In my opinion, an app should use IAA sync if available, else fall back to Link if enabled. This is because a user expects a hosted node app to sync with the host. So the app should use `ABLLinkSetActive()` to deactivate Link while syncing to IAA, and disable or hide the Link button in the app.
+
+To detect if host provides IAA sync or not, use the following code. You could call this directly after being connected to host, on the main thread, at the same time as you anyway cache the host callbackInfo to a variable for use in the render callback.
+
 ```c
-HostCallbackInfo callbackInfo;
+HostCallbackInfo callbackInfo; // global or instance variable
 callbackInfo.hostUserData = NULL;
 UInt32 dataSize = sizeof(HostCallbackInfo);
 AudioUnitGetProperty(unit, kAudioUnitProperty_HostCallbacks, kAudioUnitScope_Global, 0, &callbackInfo, &dataSize);
 BOOL hostProvidesBeatSync = callbackInfo.hostUserData && callbackInfo.beatAndTempoProc(callbackInfo.hostUserData,NULL,NULL) == noErr;
 ```
 
-An app should use IAA sync if available, else fall back to Link if enabled.
-So the app should use `ABLLinkSetActive()` to deactivate Link while syncing to IAA, and disable or hide the Link button in the app.
 
