@@ -10,11 +10,11 @@ The idea is that in each render buffer, you check where you *should be* at the e
 
 ## Host sync
 
-At the start of each render cycle, call the host beatAndTempoProc callback that you have cached in a variable. You must call this in the render callback (audio thread), not the main thread!
+At the start of each render cycle, call the host `beatAndTempoProc()` callback that you have cached in a variable. You must call this in the render callback (audio thread), not the main thread!
 
-Take the beat time it returns and add the number of beats that fits in the current buffer according to the tempo you got from the callback.
+Take the beat time it returns and add the number of beats that fits in the current buffer according to the tempo you got from the callback. This will give you the expected beat time at the end of the buffer.
 
-The given tempo should just be used as an indication of where the beatTime will be at the end of the buffer, there's no guarantee that this will be precisely correct.
+The given tempo should be used as an indication of where the beat time will be at the end of the buffer, there's no guarantee that this will be precisely correct.
 
 At the next render cycle, you know where you are and again you guess where you should be at the end of the buffer.
 
@@ -28,32 +28,37 @@ However, even with a stable tempo, nodes must be able to handle jitter in the be
 
 ## Link
 
-With [Ableton Link](http://ableton.github.io/linkkit/), you call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp and add the buffer duration in host ticks, as well as the device output latency + any additional delay you’re adding to your audio.
+With [Ableton Link](http://ableton.github.io/linkkit/), you call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime given in your render callback timestamp, adding the buffer duration in host ticks as well as the device output latency + any additional delay you’re adding to your audio.
 
-This way, you already get the precise beat time for the end of the buffer (or actually the start of the next buffer).
+This way, you get the precise beat time for the end of the buffer (or actually the start of the next buffer).
 
 Also with link, the beat time will not advance in exact equal increments, even when the tempo is fixed. This is because of small adjustments Link does to keep all the peers in sync.
 
-You can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer.
+If you need to, you can calculate the exact tempo for this buffer by checking how many beats that fits in the buffer, using the `ABLLinkBpmInRange()` function from ABLLinkUtils.h.
 
 ## Transport state
 
-Host sync also has transport state. It lets the node/plugin know if the transport is playing and if it's recording. You should use this in the same way as the beat and tempo callback: Call the `transportStateProc2()` function at the top of your render callback, and detect if the play state has changed. Start playing in the same buffer as the host changes state to playing.
+Host sync also has transport state. It lets the node/plugin know if the transport is playing and if it's recording. You should use this in the same way as the beat and tempo callback:
 
-NOTE: When the buffer comes where state changes to playing, the beat time for the start of the buffer might very well be negative! This could happen if the host has pre-roll, or if it's syncing to Link and waiting for sync quantum phase. In those situations, the exact beat time 0 will not be at the start of the buffer, but somewhere in the middle of it. A node or plugin must be careful and calculate the frame offset where the first beat actually should start within the buffer.
+Call the `transportStateProc2()` function at the top of your render callback, and detect if the play state has changed. Start playing in the same buffer as the host changes state to playing.
+
+When the buffer comes where state changes to playing, the beat time for the start of the buffer might very well be negative! This could happen if the host has pre-roll, or if it's syncing to Link and waiting for sync quantum phase. In those situations, the exact beat time 0 will not be at the start of the buffer, but somewhere in the middle of it. A node or plugin must be careful and calculate the frame offset where the first beat actually should start within the buffer.
 
 Ableton Link has no transport state, each app controls their start/stop individually.
 
 ## Advance towards target beat time
 
-Now you know the beat time, and you need a way to get there in a nice way. It might be enough to just change the playback rate/speed.
+Now that you know the beat time at the end of the current buffer, you need a way to get there in a nice way.
+
+It might be enough to just change the playback rate/speed.
 More advanced techniques might involve time stretching.
+If your app is trigger-based, for example a drum machine, just calculate the frame offsets for each event to see where in the buffer they should start playing.
 
 If the jump from your current beat time is too big, or going backwards, then you should handle this by relocating to the correct beat position. The beat time can and will go backwards, when the host rewinds or when Link waits for the phase to reach the next sync quantum.
 
 ## Jitter
 
-On most 32-bit devices there's jitter between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Link is based on `mHostTime`, you'll see fluctuations in the incrementations of the beat time, and thus also in the calculated precise tempo for each buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
+On most 32-bit devices there's jitter between `mSampleTime` and `mHostTime` of the timestamp passed to your render callback. Since Ableton Link is based on `mHostTime`, you'll see fluctuations in the incrementations of the beat time, and thus also in the calculated precise tempo for each buffer. If Link is also connected to other Link-enabled apps, the fluctuations will be larger and incorporate adjustments made by Link to keep all peers in sync.
 
 If your app is sensitive to jitter, you might want to smooth the rate of change, but in such a way that no change is lost, only accumulated and spread over a longer time period. For example:
 

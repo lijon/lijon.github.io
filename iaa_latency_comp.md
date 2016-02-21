@@ -7,13 +7,13 @@ layout: default
 
 A host might introduce delay after hosted nodes in the signal chain, for example due to latency compensation or other nodes that adds delay.
 
-It should add the total additional delay at the output + the usual device output latency, to the hostTime passed to `ABLLinkBeatTimeAtHostTime()`. This way, Ableton Link will make sure the output aligns between apps and devices.
+If the host uses [Ableton Link](http://ableton.github.io/linkkit), it should add the total additional delay at the output + the current device output latency, to the hostTime passed to `ABLLinkBeatTimeAtHostTime()`. This way, Ableton Link will make sure the output aligns between apps and devices.
 
-When hosting an IAA node that sync to Link, we must let the node app know of our additional delay, also known as presentation latency. It’s the time it takes for the output of the node to reach our hosts output buffer, not including the device output latency.
+When hosting an IAA node that might sync to Link, we must let the node app know of our additional delay, also known as presentation latency. It’s the time it takes for the output of the node to reach our hosts output buffer, not including the device output latency.
 
-This is done by adding our additional delay to the mHostTime of the timestamp passed to `AudioUnitRender()` when we render the node.
+This is done by adding our additional delay to the mHostTime of the timestamp passed to `AudioUnitRender()` when we render the node. We can always do this, since we don't know if the node syncs to Link or not. Note that we don't add the device output latency, since the node will already do that.
 
-IMPORTANT: the mHostTime shall never go backwards compared to the last call, or weird stuff will happen. To avoid this, clip the hostTime so that it always increments by at least half a buffer duration until it catches up:
+IMPORTANT: the mHostTime shall never go backwards compared to the last call, or weird stuff will happen. This could happen when the hosts added delay (due to latency compensation) or device output latency changes. To avoid this, clip the hostTime so that it always increments by at least half a buffer duration until it catches up:
 
 ```objc
 AudioTimeStamp t = *inTimeStamp;

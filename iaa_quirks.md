@@ -51,11 +51,11 @@ The favorite IAA bug that makes node apps unable to load in a host, often showin
 
 The issue is that if a hosted node is never actually shown in foreground and then disconnected, and then the host process is killed, crashed or thrown out by the iOS task management, then the node doesn’t load the next time.
 
+According to my tests, the node will fail to load if it hasn't been in the foreground *since last connection*.
+
 The solution is to let the node app kill itself when stopping audio if it was not active since last connection.
 
-By terminating itself, the app makes sure that it will not be running without being visible in the multi-task view. If the app zombies or becomes unloadable after being in foreground, user can still easily see the app and swipe it out, which is a lot better than having an invisible process running. Audiobus 2 handled this simply by forcing the node app to come to foreground by switching to it after connection, which can be quite annoying when loading many apps at once. (And IAA by itself has no standard for switching back to host, even if it would be possible for the node to open the host URL when coming foreground after becoming connected to host.)
-
-An IAA node should check if it should stop its audio when backgrounded, and when disconnected from IAA host, and when memberOfActiveAudiobusSession turns false.
+By terminating itself, the app makes sure that it will not be running without being visible in the multi-task view. If the app becomes becomes unloadable after being in foreground, user can at least easily see the app and swipe it out, which is a lot better than having an invisible process running. Audiobus 2 handles this simply by forcing the node app to come to foreground by switching to it after connection, which can be quite annoying when loading many apps at once. (And IAA by itself has no standard for switching back to host, even if it would be possible for the node to open the host URL when coming foreground after becoming connected to host.)
 
 ```objc
 // in app delegate
@@ -117,3 +117,10 @@ extern NSTimeInterval appLastActiveTime;
     }
 }
 ```
+
+An IAA node should check if it should stop its audio, by calling `maybeStop`, when backgrounded, when disconnected from IAA host, and when `memberOfActiveAudiobusSession` turns false if you're using Audiobus.
+
+## Cleanup from host side
+Another important thing is that the host uninitialize and dispose its hosted IAA node units when done with them.
+
+What might not be obvious is that a host should also do this when it terminates, if there are any nodes connected at that point. This happens for example if the user swipes out the host app from the multi-task view. Use the `applicationWillTerminate:` AppDelegate method!
