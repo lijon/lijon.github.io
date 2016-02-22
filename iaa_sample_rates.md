@@ -3,9 +3,18 @@ title: IAA and sample rates
 layout: default
 ---
 
-# Host sample rate
+## Scopes and elements
 
-The RIO unit of the node has a client side (for the node) and the “outer" side (host, or hardware if not connected to host)
+The RemoteIO unit of the node has a client side (for the node) and the “outer" side (host, or hardware if not connected to host).
+
+| Element | Input Scope           | Output Scope        |
+| ------- | --------------------- | ------------------- |
+| 0       | your render callback | speaker or host     |
+| 1       | microphone or host    | AudioUnitRender()   |
+
+You provide audio to the host or hardware output through your render callback, and you pull audio from the host or hardware input by calling AudioUnitRender() on element 1.
+
+## Host sample rate
 
 ​A host must run nodes in the hardware sample rate, and it sets the format on its client side of the IAA node unit, which equals the outer side of the RIO unit from the node’s perspective.
 
@@ -28,15 +37,18 @@ static void UpdateHostSampleRate(AudioUnit unit) {
 
 The host might change SR after connection. When an IAA host changes sample rate, it must uninitialize all the hosted nodes, change their stream format to use the new SR, and then initialize it again. The IAA node sees this as a disconnect-reconnect, at least most of the times.
 
-NOTE: Using the AVAudioSession route-change notification to update the sample rate *does not* work reliable. It works when plugging headphones and audio interfaces in/out, but most often not when the host changes sample rate. The technique used here catches all situations, also when plugging hardware.
+NOTE: Using the `AVAudioSessionRouteChangeNotification` to update the sample rate *does not* work reliable. It works when plugging headphones and audio interfaces in/out, but most often not when the host changes sample rate. The technique used here catches all situations, also when plugging hardware.
 
-So we should use a property listener on this property:
+Also note that the hardware sample rate might change even if you're not currently being hosted, or even if your app is not an IAA node app. This happens when another app using PlayAndRecord category was started before your app, and then the other app changes the preferredSampleRate on the audio session. So don't use the route-change notification!
+
+The correct way is to use a property listener on `kAudioUnitProperty_StreamFormat`:
 
 ```objc
 static void StreamFormatCallback(void *inRefCon,
     AudioUnit inUnit, AudioUnitPropertyID inID,
     AudioUnitScope inScope, AudioUnitElement inElement)
 {
+    // Output scope element 0 is the "outer" side for output
     if(inScope == kAudioUnitScope_Output && inElement == 0) {
         UpdateHostSampleRate(inUnit);
     }
