@@ -55,7 +55,7 @@ According to my tests, the node will fail to load if it hasn't been in the foreg
 
 The solution is to let the node app kill itself when stopping audio if it was not active since last connection.
 
-By terminating itself, the app makes sure that it will not be running without being visible in the multi-task view. If the app becomes becomes unloadable after being in foreground, user can at least easily see the app and swipe it out, which is a lot better than having an invisible process running. Audiobus 2 handles this simply by forcing the node app to come to foreground by switching to it after connection, which can be quite annoying when loading many apps at once. (And IAA by itself has no standard for switching back to host, even if it would be possible for the node to open the host URL when coming foreground after becoming connected to host.)
+By terminating itself, the app makes sure that it will not be running without being visible in the multi-task view. If the app becomes unloadable after being in foreground, user can at least easily see the app and swipe it out, which is a lot better than having an invisible process running. Audiobus 2 handles this simply by forcing the node app to come to foreground by switching to it after connection, which can be quite annoying when loading many apps at once. (And IAA by itself has no standard for switching back to host, even if it would be possible for the node to open the host URL when coming foreground after becoming connected to host.)
 
 ```objc
 // in app delegate
@@ -119,6 +119,8 @@ extern NSTimeInterval appLastActiveTime;
 ```
 
 An IAA node should check if it should stop its audio, by calling `maybeStop`, when backgrounded, when disconnected from IAA host, and when `memberOfActiveAudiobusSession` turns false if you're using Audiobus.
+
+Note that this workaround is not only to avoid zombies, but also to avoid invisible IAA node apps running in the background, possibly eating CPU or even producing audio without the user knowing which app is doing it, and having no way to see it in the multi task view to terminate the app.
 
 ## Cleanup from host side
 Another important thing is that the host uninitialize and dispose its hosted IAA node units when done with them.
