@@ -19,13 +19,19 @@ In this document, the RemoteIO unit is called RIO and the Remote AudioUnit (the 
 
 ![IAA Diagram](IAA diagram.png)
 
-## Host sample rate
+## Host sample rate & avoiding converters
 
-​A host must init its RAUs using the hardware sample rate in its client format, which is set on the client side of the IAA node unit (input/output scope element 0), which equals the outer side (host or hardware) of the RIO unit from the node’s perspective.
+The "outer side" of the nodes RIO unit is always fixed at the current hardware sample rate.
 
-When the hardware sample rate changes, the host should update the client side format of hosted RAUs, or else iOS will automatically insert sample rate converters - leading to unexpected buffer sizes and loss of audio quality.
+​A host must init its RAUs using the hardware sample rate in its client format, by setting it on the client side of the RAU (input/output scope element 0), which is connected by IAA to the outer side (host or hardware) of the RIO unit from the node’s perspective. Not using the hardware SR when initializing the RAU will fail with `kAudioComponentErr_InvalidFormat`.
 
-The node can detect this and follow the host sample rate, or it could ignore it (as most IAA node apps does, currently). When ignored, the RIO will do sample rate conversion.
+When the hardware sample rate changes, the host should update the client side format of hosted RAUs, or else iOS will automatically insert sample rate converters - leading to unexpected buffer sizes and loss of audio quality. It's a bit weird that iOS allows sample rate conversion in this case, but not at RAU initialization.
+
+The node can detect and follow the hardware sample rate, or it could ignore it (as most IAA node apps does, currently). When ignored, the RIO unit of the node will do sample rate conversion.
+
+So, there's two places where conversion might take place: between node RIO client side and its outer side, and between host RAU client side and the node RIO outer side. Note that this outer side is part of the Inter-App Audio mechanism and does not actually belong to either node or host.
+
+### IAA sample time
 
 IAA host gives current time in samples. Since node and host might run at different sample rates, we must use the host SR for converting to seconds.
 
