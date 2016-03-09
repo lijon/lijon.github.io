@@ -15,9 +15,15 @@ The RemoteIO unit of the node has a client side (for the node) and the “outer"
 
 You provide audio to the host or hardware output through your render callback, and you pull audio from the host or hardware input by calling AudioUnitRender() on element 1.
 
+In this document, the RemoteIO unit is called RIO and the Remote AudioUnit (the IAA node unit from the host perspective) is called RAU.
+
+![IAA Diagram](IAA diagram.png)
+
 ## Host sample rate
 
-​A host must run nodes in the hardware sample rate, and it sets the format on its client side of the IAA node unit, which equals the outer side of the RIO unit from the node’s perspective.
+​A host must init its RAUs using the hardware sample rate in its client format, which is set on the client side of the IAA node unit (input/output scope element 0), which equals the outer side (host or hardware) of the RIO unit from the node’s perspective.
+
+When the hardware sample rate changes, the host should update the client side format of hosted RAUs, or else iOS will automatically insert sample rate converters - leading to unexpected buffer sizes and loss of audio quality.
 
 The node can detect this and follow the host sample rate, or it could ignore it (as most IAA node apps does, currently). When ignored, the RIO will do sample rate conversion.
 
