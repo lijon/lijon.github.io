@@ -38,13 +38,17 @@ If you need to, you can calculate the exact tempo for this buffer by checking ho
 
 ## Transport state
 
+Ableton Link has no transport state, each app controls their start/stop individually.
+
 Host sync also has transport state. It lets the node/plugin know if the transport is playing and if it's recording. You should use this in the same way as the beat and tempo callback:
 
 Call the `transportStateProc2()` function at the top of your render callback, and detect if the play state has changed. Start playing in the same buffer as the host changes state to playing.
 
+### Negative beat time
+
 When the buffer comes where state changes to playing, the beat time for the start of the buffer might very well be negative! This could happen if the host has pre-roll, or if it's syncing to Link and waiting for sync quantum phase. In those situations, the exact beat time 0 will not be at the start of the buffer, but somewhere in the middle of it. A node or plugin must be careful and calculate the frame offset where the first beat actually should start within the buffer.
 
-Ableton Link has no transport state, each app controls their start/stop individually.
+So, it's important that a node must treat negative beat time to mean "just sit and wait until time 0".
 
 ## Advance towards target beat time
 

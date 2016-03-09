@@ -23,13 +23,22 @@ AudioUnitGetProperty(inUnit,
 
 When connecting multiple ports, and then disconnecting one of them, an iOS bug (still present in 9.3 beta) makes the still-connected port block the audio thread for several seconds and then the unit stops working, returning MACH_RCV_TIMED_OUT from AudioUnitRender().
 
-To avoid this, we need to restart the unit on disconnection. Once such a unit has been connected, it must stay running until the app has been fully disconnected on all ports. Note that IAA automatically stops the unit on disconnection.
+To avoid this, we need to restart the unit on disconnection. Note that IAA automatically stops the unit on disconnection, so we must explicitly start it again.
+
+Once such a unit has been connected, it must stay running until the app has been fully disconnected on all ports.
+
+So at disconnection, we can always restart the unit, and *then* check if we should stop our audio engine for real, if *all* our ports are disconnected and we're in the background and shouldn't keep playing, etc.
+
+```objc
+// FIXME: example code using IsInterAppConnected callback,
+// also setting a mute flag..
+```
 
 IMPORTANT: If such an aux unit is running while unconnected, you must mute the buffers in it or it will play through from mic to speaker, causing feedback.
 
 Also note that the same thing applies to the “main” IAA port if the app has one. It must be restarted on disconnection, then check if you should really stop it, and don’t stop if extra IAA ports still connected.
 
-So the rule of thumb is: *never stop a RIO unit that was previously connected if there are any other units currently connected*.
+So the rule of thumb is: *Restart a RIO unit on disconnection, and never stop a RIO unit that was previously connected if there are any other units currently connected*.
 
 ## Render callback ordering
 
@@ -37,13 +46,44 @@ An app might have multiple remoteIO units, for example one main and one extra fo
 
 The IAA unit might need data produced during our main render callback, so we want to make sure it runs after or main unit.
 
-The IAA units render callback is actually called from its host. So it’s the order of the hosts render callback and our main render callback that matters. This order depends on which render callback started first. So if the host is opened first, and the other app second, the other apps IAA render callback will be called after its main render callback! This is not good, as it introduces one buffer delay: the IAA render callback only has the data produced during the previous main render callback.
+The IAA units render callback is actually called from its host. So it’s the order of the hosts render callback and our main render callback that matters. This order depends on which render callback started first. So if the host is opened first, and the other app second, the other apps IAA render callback will be called before its main render callback! This is not good, as it introduces one buffer delay: the IAA render callback only has the data produced during the previous main render callback.
 
-One way to fix it might be to check the timestamp and do the main render code from any render callback, when timestamp changed. A problem with that is that a host might render your IAA unit in another buffer size than iOS is rendering your main unit!
+One way to fix it is to check the timestamp and do the main render code from any render callback, when the timestamp changed. A problem with this approach is however that it assumes all units will be rendered with equal buffer sizes. A host could potentially render your IAA unit in another buffer size than iOS is rendering your main unit, for example splitting the cycle into smaller buffers.
 
-Another way that might work is to use render notify callbacks. Will a pre-render notify always happen before *all* render callbacks (including other apps) or only our own? I haven’t investigated this yet.
+```obj-c
+static void mainCallback(void* inRefCon,
+    UInt32 inNumberFrames,
+    const AudioTimeStamp* inTimeStamp,
+    AudioBufferList* ioData)
+{
+    // do the main render routine as soon as the required number of
+    // frames have elapsed, this handles AUs being called from
+    // different hosts, while still only calling the main render
+    // routine once for each buffer
+    static Float64 lastSampleTime = 0;
+    if (inTimeStamp->mSampleTime - lastSampleTime < inNumberFrames) {
+        return;
+    }
+    lastSampleTime = inTimeStamp->mSampleTime;
+    // produce/process audio here and put it in some internal buffers.
+    // here we also pull audio from hardware input or IAA filter ports
+    // using AudioUnitRender();
+}
 
-----
+// The actual render callback for any RemoteIO unit
+static OSStatus renderCallback(void* inRefCon,
+    AudioUnitRenderActionFlags* ioActionFlags,
+    const AudioTimeStamp* inTimeStamp,
+    UInt32 inBusNumber,
+    UInt32 inNumberFrames,
+    AudioBufferList* ioData)
+{
+    mainCallback(inRefCon, inNumberFrames, inTimeStamp);
+    // copy audio from our internal buffers to ioData here.
+}
+```
+
+The problem with this is that a host could very well change the system timestamps before passing them to the node when rendering them! For example, AUM adjust the mHostTime to make Link-enabled apps sync even though AUM is doing latency compensation, but it doesn't change mSampleTime.
 
 # Avoiding IAA zombie nodes
 

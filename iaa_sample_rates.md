@@ -12,6 +12,7 @@ The RemoteIO unit of the node has a client side (for the node) and the “outer"
 | 0       | your render callback | speaker or host     |
 | 1       | microphone or host    | AudioUnitRender()   |
 
+
 You provide audio to the host or hardware output through your render callback, and you pull audio from the host or hardware input by calling AudioUnitRender() on element 1.
 
 ## Host sample rate
