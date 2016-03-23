@@ -3,7 +3,7 @@ title: iOS Audio Sync
 layout: default
 ---
 
-# IAA/AU host sync vs Ableton Link sync
+# Modern sync technologies
 
 Host sync has been available for ages on the desktop, and has been part of the Inter-App Audio technology since it came in iOS 7. It's also how the new Audio Unit extensions in iOS 9 syncs to their hosts. The code examples in this document will show the Inter-App Audio API for host sync, which however is very similar to the new AUv3 API used by Audio Unit extensions.
 
@@ -14,7 +14,7 @@ From a users point of view, those two technologies serve quite different purpose
 Implementing the basic sync mechanism for these two are actually quite similar, however.
 The idea is that in each render buffer, you check where you *should be* at the end of this buffer, or actually where you should be at the first sample of the *next* buffer.
 
-## Ableton Link
+# Ableton Link
 
 At the top of your render callback, you call `ABLLinkBeatTimeAtHostTime()`, passing it the mHostTime that was passed in your render callbacks timestamp argument. But first, you must add the buffer duration in host ticks as well as the device output latency, plus any additional delay you’re adding to your audio.
 
@@ -26,7 +26,7 @@ If you need to, you can calculate the exact tempo for the current buffer by chec
 
 Link also provides functions to get and set the session tempo, setting the sync quantum, and more. See [ableton.github.io/linkkit](http://ableton.github.io/linkkit) for full API documentation.
 
-## Host sync
+# Host sync
 
 Host sync is done through a set of callbacks contained in a HostCallbackInfo struct, that you retrieve from the host when connected and cache in a variable that is safe to access from the audio thread.
 
@@ -42,7 +42,7 @@ AudioUnitGetProperty(_audioUnit,
 
 The two important callbacks in the HostCallbackInfo struct are `beatAndTempoProc` and `transportStateProc2`.
 
-### Beat time clock
+## Beat time clock
 
 At the start of each render cycle, call the `beatAndTempoProc()` callback. You must call this in the render callback (audio thread), not the main thread!
 
@@ -69,7 +69,7 @@ My mixer and host app [AUM](http://kymatica.com/aum) as of version 1.0 sends a f
 
 However, even with a stable tempo, nodes must be able to handle jitter in the beat time. The guessed beat time for end of buffer will not always align with the reported beat time you get during the next render cycle. More on this later in this document.
 
-### Transport state
+## Transport state
 
 Host sync has transport state that lets the node/plugin know if the transport is playing and if it's recording, as well as some more esoteric information that we won't focus on here.
 
@@ -93,7 +93,7 @@ if (_hostCallbackInfo.hostUserData) {
 }
 ```
 
-### Starting at negative beat time
+## Starting at negative beat time
 
 When the buffer comes where state changes to playing, the beat time for the start of the buffer might very well be negative! This could happen if the host has pre-roll, or if it's syncing to Link and waiting for sync quantum phase. In those situations, the exact beat time 0 will not be at the start of the buffer, but somewhere in the middle of it.
 
@@ -101,7 +101,7 @@ A node or plugin must be careful and calculate the frame offset where the first 
 
 There might also be multiple buffers with negative beat time before the buffer containing the start beat frame comes. So, it's important that a node must treat negative beat time to mean "just sit and wait until time 0".
 
-### Transport panel
+## Transport panel
 
 It's nice for an IAA node app to display a transport control panel and the current time for its host. To get the current state, just use the `transportStateProc2` again, now passing in some more variables that we are interested in:
 
@@ -158,7 +158,7 @@ For remote controlling the host transport, you send AudioUnitRemoteControlEvents
 }
 ```
 
-## Advance towards target beat time
+# Towards target beat time...
 
 Now that you know the beat time at the end of the current buffer, you need a way to get there in a nice way.
 
@@ -187,9 +187,13 @@ rateRemain = diff * (1.0-alpha);
 // now use rate here
 ```
 
-## Detect if host provides IAA sync
+# Host sync or Link, or both?
+
+I think it makes a lot of sense for an IAA app to support both host sync and Ableton Link. For an AU extension, host sync is the only reasonable option.
 
 In my opinion, an app should use IAA sync if available, else fall back to Link if enabled. This is because a user expects a hosted node app to sync with the host. So the app should use `ABLLinkSetActive()` to deactivate Link while syncing to IAA, and disable or hide the Link button in the app. You can also provide an "IAA host sync" toggle just in case the user wants to use Link instead and are not hosting the app inside a Link-enabled host such as [AUM](http://kymatica.com/aum).
+
+## Detection of IAA sync
 
 To detect if host provides IAA sync or not, use the following code. You could call this directly after being connected to host, on the main thread after you've read and cached the HostCallbackInfo to a variable:
 
