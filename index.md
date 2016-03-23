@@ -16,3 +16,6 @@ How to handle flexible sample rates.
 
 [IAA latency compensation](/iaa_latency_comp.html)  
 A solution for latency reporting.
+
+[IAA node switch panel](/iaa_node_panel.html)  
+How to show an IAA app switch panel that includes both host and sibling node apps.
