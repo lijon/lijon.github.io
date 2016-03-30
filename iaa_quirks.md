@@ -85,6 +85,8 @@ static OSStatus renderCallback(void* inRefCon,
 
 The problem with this is that a host could very well change the system timestamps before passing them to the node when rendering them! For example, AUM adjust the mHostTime to make Link-enabled apps sync even though AUM is doing latency compensation, but it doesn't change mSampleTime.
 
+So in summary, there's still no good solution to this problem.
+
 # Avoiding IAA zombie nodes
 
 The favorite IAA bug that makes node apps unable to load in a host, often showing a message that the user needs to manually launch the app, force-close it, and then try again.
