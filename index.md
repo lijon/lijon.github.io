@@ -22,3 +22,6 @@ How to show an IAA app switch panel that includes both host and sibling node app
 
 [IAA latency compensation](/iaa_latency_comp.html)  
 A custom solution for latency reporting.
+
+[Safe and glitch-free audio code](http://atastypixel.com/blog/four-common-mistakes-in-audio-development/)  
+Four common mistakes in audio development. Article by Michael Tyson (Loopy/Audiobus/TheAmazingAudioEngine)
