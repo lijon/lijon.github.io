@@ -168,3 +168,24 @@ Note that this workaround is not only to avoid zombies, but also to avoid invisi
 Another important thing is that the host uninitialize and dispose its hosted IAA node units when done with them.
 
 What might not be obvious is that a host should also do this when it terminates, if there are any nodes connected at that point. This happens for example if the user swipes out the host app from the multi-task view. Use the `applicationWillTerminate:` AppDelegate method!
+
+## Buzz noise, interruptions for IAA nodes
+Sometimes, iOS wrongfully sends a session interruption to hosted IAA nodes, even though there actually was no real cause for the interruption. This results in a loud buzzing noise as the host continues to grab the same buffer over and over again, while the node is actually stopped.
+
+The work-around is for the node to restart its audio if interrupted while connected to a host. Real interruptions should be handled by the host in any case, by re-initializing its hosted nodes by calling `AudioUnitInitialize()` on them.
+
+In your interruption-began handler, do as follows:
+```
+    UInt32 iaaConnected;
+    UInt32 size = sizeof(iaaConnected);
+    AudioUnitGetProperty(_audioUnit, kAudioUnitProperty_IsInterAppConnected, kAudioUnitScope_Global, 0, &iaaConnected, &size);
+    if ( iaaConnected ) {
+        NSLog(@"Audio session interrupted while connected to IAA, restarting");
+        [self start];
+        return;
+    }
+```
+Where `[self start]` is where you call `AudioOutputUnitStart()` on your IO audio unit.  
+
+It's important to not restart your audio on interruption unless you're currently being hosted (kAudioUnitProperty_IsInterAppConnected property is TRUE), otherwise your app will drain battery in the background after a real interruption such as a phone call or alarm.
+
