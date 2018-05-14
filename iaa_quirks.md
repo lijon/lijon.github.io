@@ -176,16 +176,26 @@ The work-around is for the node to restart its audio if interrupted while connec
 
 In your interruption-began handler, do as follows:
 ```
-    UInt32 iaaConnected;
-    UInt32 size = sizeof(iaaConnected);
-    AudioUnitGetProperty(_audioUnit, kAudioUnitProperty_IsInterAppConnected, kAudioUnitScope_Global, 0, &iaaConnected, &size);
-    if ( iaaConnected ) {
-        NSLog(@"Audio session interrupted while connected to IAA, restarting");
-        [self start];
-        return;
++ (void)handleSessionInterruption:(NSNotification*)notification {
+    AVAudioSession *a = notification.object;
+    AVAudioSessionInterruptionType type = [notification.userInfo[AVAudioSessionInterruptionTypeKey] integerValue];
+    if (type == AVAudioSessionInterruptionTypeBegan)
+    {
+        UInt32 iaaConnected;
+        UInt32 size = sizeof(iaaConnected);
+        AudioUnitGetProperty(_audioUnit, kAudioUnitProperty_IsInterAppConnected, kAudioUnitScope_Global, 0, &iaaConnected, &size);
+        if (iaaConnected) {
+            NSLog(@"Audio session interrupted while connected to IAA, restarting");
+            AudioOutputUnitStart(_audioUnit);
+            return;
+        }
+    } else if(type == AVAudioSessionInterruptionTypeEnded) {
+        [a setActive:YES error:nil];
+        if (wasRunning) {
+            [self start]; // resume your audio playback here
+        }
     }
 ```
-Where `[self start]` is where you call `AudioOutputUnitStart()` on your IO audio unit.  
 
 It's important to not restart your audio on interruption unless you're currently being hosted (kAudioUnitProperty_IsInterAppConnected property is TRUE), otherwise your app will drain battery in the background after a real interruption such as a phone call or alarm.
 
