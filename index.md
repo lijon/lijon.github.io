@@ -5,6 +5,9 @@ layout: default
 
 # iOS Audio
 
+[iOS MIDI timestamps](/ios_midi_timestamps.html)
+Timestamping done right for AUv3, IAA and a bit about CoreMIDI.
+
 [Inter-App Audio](/inter-app-audio.html)  
 Overview and basics for implementing an IAA node app.
 
