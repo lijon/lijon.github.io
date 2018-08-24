@@ -5,7 +5,7 @@ layout: default
 
 # iOS Audio
 
-[iOS MIDI timestamps](/ios_midi_timestamps.html)
+[iOS MIDI timestamps](/ios_midi_timestamps.html)  
 Timestamping done right for AUv3, IAA and a bit about CoreMIDI.
 
 [Inter-App Audio](/inter-app-audio.html)  
