@@ -56,7 +56,7 @@ safeSelf->_midiScheduleBlock(AUEventSampleTimeImmediate
 If you rather would store the original events absolute sample time, and subtract the current sample time when sending to an AUv3, that is absolutely fine as well.
 
 As the headers say about the timestamp in `AUScheduleMIDIEventBlock`: "The sample time (timestamp->mSampleTime) at which the MIDI event is to occur. When scheduling events during the render cycle (e.g. via a render observer) this time can be AUEventSampleTimeImmediate plus an optional buffer offset, in which case the event is scheduled at that position
-in the current render cycle.". However, as far as my tests has shown, it does *not* work to send absolute sample time in this case, even if the documentation implies that. So just use `AUScheduleMIDIEventBlock + offsetFrames` and make sure to schedule events from the audio thread, otherwise the timestamp can't be associated with the current render cycle.
+in the current render cycle.". However, as far as my tests have shown, it does *not* work to send absolute sample time in this case, even if the documentation implies that. So just use `AUScheduleMIDIEventBlock + offsetFrames` and make sure to schedule events from the audio thread, otherwise the timestamp can't be associated with the current render cycle.
 
 # Inter-App Audio nodes
 
