@@ -3,6 +3,8 @@ layout: default
 title: IAA node panel
 ---
 
+**IMPORTANT:** As of iOS 11, do *not* use the CAInterAppAudioSwitcherView since it has bugs that make `assertiond` complain and eventually crash, bringing down the whole iOS device to a reset!
+
 Some have been wondering how I did the IAA node panel UI in my [AUFX apps](http://kymatica.com/aufx), shown when tapping the host icon while connected to a host.
 
 Instead of just switching to the host, it shows a popup with icons for all nodes currently hosted in the same host, allowing easy switching between them.
