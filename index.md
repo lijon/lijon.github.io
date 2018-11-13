@@ -26,5 +26,5 @@ A custom solution for latency reporting.
 [Safe and glitch-free audio code](http://atastypixel.com/blog/four-common-mistakes-in-audio-development/)  
 Four common mistakes in audio development. Article by Michael Tyson (Loopy/Audiobus/TheAmazingAudioEngine)
 
-[AUv3 MIDI plugins](http://ruismaker.com/au-midi-plugins/)
+[AUv3 MIDI plugins](http://ruismaker.com/au-midi-plugins/)  
 Tips, background information and considerations for iOS developers wishing to create AUv3 MIDI plugins or to support MIDI plugins in AU host software. Article by Bram Bos (Rozeta Sequencer Suite/Ruismaker/RippleMaker/Troublemaker)
