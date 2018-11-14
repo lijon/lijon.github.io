@@ -1,18 +1,17 @@
 ---
 title: Test page
-layout: page
+layout: default
 ---
 
-# Header
+# Index
 
-Here's a paragraph..
+<ul>
+{% for name in site.sidebar %}
 
-```c
-while(x < 10)
-    printf("count %d\n",x++);
-```
+  {% assign page = site.[name] %}
 
-## h2
-### h3
-#### h4
+<li><a href="{{ page.url }}">{{ page.title }}</a></li>
+
+{% endfor %}
+</ul>
 

@@ -3,4 +3,4 @@ title: Developer Notes
 description: Jonatan Liljedahl (Kymatica AB)
 show_downloads: false
 logo: http://kymatica.com/uploads/Main/hexagram_light.png
-
+sidebar: [index, ios_midi_timestamps]
