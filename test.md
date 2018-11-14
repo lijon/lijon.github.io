@@ -3,15 +3,15 @@ title: Test page
 layout: default
 ---
 
-# Index
+# Index test
 
 <ul>
-{% for name in site.sidebar %}
-
-  {% assign page = site.[name] %}
-
-<li><a href="{{ page.url }}">{{ page.title }}</a></li>
-
+{% for page in site.pages %}
+	{% for name in site.sidebar %}
+		{% if page.name == name %}
+			<li><a href="{{ page.url }}">{{ page.title }}</a></li>
+		{% endif %}
+	{% endfor %}
 {% endfor %}
 </ul>
 
