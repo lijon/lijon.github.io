@@ -2,6 +2,31 @@
 ---
 
 @import "{{ site.theme }}";
-header p,h1 {
+header p, header h1 {
 	text-align:center;
+}
+body {
+	padding: 30px;
+}
+.wrapper {
+	width: auto;
+}
+header img {
+	display: block;
+	margin-left: auto;
+	margin-right: auto;
+}
+section {
+	width: auto;
+	margin-left: 300px;
+	max-width: 700px;
+	float: none;
+}
+@media print, screen and (max-width: 960px) {
+  	section {
+  		margin:0;
+  	}
+  	header {
+  		padding:0;
+  	}
 }
