@@ -5,6 +5,10 @@
 header p, header h1 {
 	text-align:center;
 }
+.pagetitle {
+	color: #888;
+	border-bottom: 1px solid #888;
+}
 body {
 	padding: 30px;
 }
@@ -15,6 +19,34 @@ header img {
 	display: block;
 	margin-left: auto;
 	margin-right: auto;
+}
+header ul {
+	height: unset;
+	padding: unset;
+	background: unset;
+	border: none;
+	border-top: 1px solid #aaa;
+	border-radius: 0;
+	width: unset;
+	max-width: 180px;
+	margin: 0 auto;
+	padding: 10px;
+}
+header li {
+	width: unset;
+	float: none;
+	border: none;
+	height: unset;
+}
+header ul li + li + li {
+	width: unset;
+	border-right: unset;
+}
+header ul a {
+	font-size: unset;
+	display: unset;
+	padding: unset;
+	color: #267CB9;
 }
 section {
 	width: auto;
@@ -29,4 +61,9 @@ section {
   	header {
   		padding:0;
   	}
+  	header ul {
+    position:unset;
+    right:unset;
+    top:unset;
+  }
 }

@@ -1,26 +1,26 @@
 ---
-title: Developer Notes
+title: Contents
 layout: default
 ---
 
 # iOS Audio
 
-[iOS MIDI timestamps](/ios_midi_timestamps.html)  
+[iOS MIDI timestamps](/ios_midi_timestamps)  
 Timestamping done right for AUv3, IAA and a bit about CoreMIDI.
 
-[Inter-App Audio](/inter-app-audio.html)  
+[Inter-App Audio](/inter-app-audio)  
 Overview and basics for implementing an IAA node app.
 
-[Synchronization](/ios_audio_sync.html)  
+[Synchronization](/ios_audio_sync)  
 IAA/AU host sync and Ableton Link sync.
 
-[IAA quirks](/iaa_quirks.html)  
+[IAA quirks](/iaa_quirks)  
 Avoiding IAA zombies, handling multiple IAA ports, etc.
 
-[IAA and sample rates](/iaa_sample_rates.html)  
+[IAA and sample rates](/iaa_sample_rates)  
 How to handle flexible sample rates.
 
-[IAA latency compensation](/iaa_latency_comp.html)  
+[IAA latency compensation](/iaa_latency_comp)  
 A custom solution for latency reporting.
 
 [Safe and glitch-free audio code](http://atastypixel.com/blog/four-common-mistakes-in-audio-development/)  
