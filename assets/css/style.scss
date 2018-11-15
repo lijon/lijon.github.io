@@ -5,6 +5,9 @@
 header p, header h1 {
 	text-align:center;
 }
+header p {
+	margin:0;
+}
 .pagetitle {
 	color: #888;
 	border-bottom: 1px solid #888;
@@ -65,10 +68,16 @@ footer {
 	float: none;
 	position: unset;
 }
+a:hover, a:focus, header ul a:hover, header ul a:focus {
+  color:#069;
+  font-weight: unset;
+  background: #eee;
+}
 @media print, screen and (max-width: 960px) {
   	section {
   		margin:0;
   		border:none;
+  		padding-top: 50px;
   	}
   	header {
   		padding:0;
@@ -77,5 +86,14 @@ footer {
     position:unset;
     right:unset;
     top:unset;
+  }
+}
+@media print, screen and (max-width: 720px) {
+  body {
+    word-wrap:unset;
+    -webkit-text-size-adjust: none;
+  }
+  header ul, header p.view {
+  	position:unset;
   }
 }

@@ -2,4 +2,4 @@ theme: jekyll-theme-minimal
 title: Developer Notes
 description: Jonatan Liljedahl (Kymatica AB)
 show_downloads: false
-logo: http://kymatica.com/uploads/Main/hexagram_light.png
+logo: /assets/hexagram_light_300.png
