@@ -93,8 +93,12 @@ safeSelf->_midiScheduleBlock(AUEventSampleTimeImmediate
 
 If you rather would store the original events absolute sample time, and subtract the current sample time when sending to an AUv3, that is absolutely fine as well.
 
-As the headers say about the timestamp in `AUScheduleMIDIEventBlock`: "The sample time (timestamp->mSampleTime) at which the MIDI event is to occur. When scheduling events during the render cycle (e.g. via a render observer) this time can be AUEventSampleTimeImmediate plus an optional buffer offset, in which case the event is scheduled at that position
-in the current render cycle.". However, as far as my tests have shown, it does *not* work to send absolute sample time in this case, even if the documentation implies that. So just use `AUScheduleMIDIEventBlock + offsetFrames` and make sure to schedule events from the audio thread, otherwise the timestamp can't be associated with the current render cycle.
+As the headers say about the timestamp in `AUScheduleMIDIEventBlock`:
+
+> The sample time (timestamp->mSampleTime) at which the MIDI event is to occur. When scheduling events during the render cycle (e.g. via a render observer) this time can be AUEventSampleTimeImmediate plus an optional buffer offset, in which case the event is scheduled at that position
+in the current render cycle.
+
+However, as far as my tests have shown, it does *not* work to send absolute sample time in this case, even if the documentation implies that. So just use `AUScheduleMIDIEventBlock + offsetFrames` and make sure to schedule events from the audio thread, otherwise the timestamp can't be associated with the current render cycle.
 
 ### plugin side
 
@@ -143,6 +147,25 @@ IAA also allows sample time (frame offset) timestamps when sending MIDI to an IA
 
 Unfortunately IAA has no concept of MIDI outputs, so receiving MIDI from an IAA app needs to be done via CoreMIDI virtual endpoints.
 
+## Sending MIDI to an IAA node
+
+When sending MIDI to an IAA node, pass the frame offset for the event in the call to `MusicDeviceMIDIEvent`. Unfortunately this function is fixed to 3 byte messages, so you might need some logic to find out the correct size of the event you're going to send. Also here, we clip the offset to keep it within the bounds of the current buffer size.
+
+```
+MyEvent *ev = ... // this is some struct holding your event
+UInt32 t = (UInt32)MIN(_currentBufferSize,MAX(0,ev->frameOffset));
+if(ev->length > 0 && ev->data[0] == 0xf0)
+    MusicDeviceSysEx(weakSelf->_audioUnit, ev->data, ev->length);
+else if(ev->length==3)
+    MusicDeviceMIDIEvent(weakSelf->_audioUnit, ev->data[0], ev->data[1], ev->data[2], t);
+else if(ev->length==2)
+    MusicDeviceMIDIEvent(weakSelf->_audioUnit, ev->data[0], ev->data[1], 0, t);
+else if(ev->length==1)
+    MusicDeviceMIDIEvent(weakSelf->_audioUnit, ev->data[0], 0, 0, t);
+```
+
+Note that you should call this from your audio thread, otherwise the timestamp can't be associated with the current render cycle.
+
 ## Receving MIDI in the IAA node
 
 To receive MIDI in your IAA node app, hook up the MIDI reception callbacks:
@@ -174,24 +197,6 @@ The SysEx callback has no timestamping, so we'll just ignore that for now.
 
 Note that these callbacks will be called from the audio thread, so follow the rules of realtime safety! (No obj-c, swift, blocking, locks, memory allocations or file I/O).
 
-## Sending MIDI to an IAA node
-
-When sending MIDI to an IAA node, pass the frame offset for the event in the call to `MusicDeviceMIDIEvent`. Unfortunately this function is fixed to 3 byte messages, so you might need some logic to find out the correct size of the event you're going to send. Also here, we clip the offset to keep it within the bounds of the current buffer size.
-
-```
-MyEvent *ev = ... // this is some struct holding your event
-UInt32 t = (UInt32)MIN(_currentBufferSize,MAX(0,ev->frameOffset));
-if(ev->length > 0 && ev->data[0] == 0xf0)
-    MusicDeviceSysEx(weakSelf->_audioUnit, ev->data, ev->length);
-else if(ev->length==3)
-    MusicDeviceMIDIEvent(weakSelf->_audioUnit, ev->data[0], ev->data[1], ev->data[2], t);
-else if(ev->length==2)
-    MusicDeviceMIDIEvent(weakSelf->_audioUnit, ev->data[0], ev->data[1], 0, t);
-else if(ev->length==1)
-    MusicDeviceMIDIEvent(weakSelf->_audioUnit, ev->data[0], 0, 0, t);
-```
-
-Note that you should call this from your audio thread, otherwise the timestamp can't be associated with the current render cycle.
 
 # CoreMIDI
 
@@ -229,4 +234,4 @@ void SplitMIDIEvents(MyMIDISource *src, MyMIDIPacket *ev) {
 }
 ```
 
-Where MyMIDISource is a struct or object containing a function pointer (_recvfuncptr) for handle individual MIDI events, and MyMIDIPacket is a struct that simply contains a timestamp, a length and a byte array for MIDI data.
+Where `MyMIDISource` is a struct or object containing a function pointer (`_recvfuncptr`) for handling individual MIDI events, and `MyMIDIPacket` is a struct that simply contains a timestamp, a length and a byte array for MIDI data.
