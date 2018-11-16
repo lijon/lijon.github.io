@@ -11,15 +11,53 @@ It's important to make use of the timestamping when receiving and sending MIDI, 
 
 AUv3 plugins allows the use of timestamping in sample time for each render cycle, allowing sample perfect timing.
 
-## Receiving MIDI from an AUv3
+## MIDI from AUv3 plugin to host
+### plugin side
 
 AUv3 plugins have the possibility to send MIDI to the host, via an `MIDIOutputEventBlock` property.
-
 As the headers say, the host can set this block and the plug-in can call it in its renderBlock to provide to the host the MIDI data associated with *the current render cycle*.
+
+For the host to see your MIDI output(s), implement `MIDIOutputNames` and return an array of names for each MIDI output. A typical plugin only needs one.
+
+```
+- (NSArray<NSString*>)MIDIOutputNames {
+    return @[@"Out1"];
+}
+```
+
+Cache the `MIDIOutputEventBlock` in your `allocateRenderResourcesAndReturnError:`
+
+```
+- (BOOL)allocateRenderResourcesAndReturnError:(NSError **)outError {
+    if (![super allocateRenderResourcesAndReturnError:outError]) {
+        return NO;
+    }
+
+    if (@available(iOS 11.0, *)) {
+        _midiOutput = self.MIDIOutputEventBlock;
+    }
+    
+    // ...
+
+    return YES;
+}
+```
+
+You can now send one or more MIDI events from your `internalRenderBlock` like this, where `frameOffset` is the sample offset within the current buffer for the event.
+
+```
+if(THIS->_midiOutput) {
+    unsigned char data[] = {0x90,60,100};
+    THIS->_midiOutput( timestamp->mSampleTime + frameOffset, 0, 3, data );
+}
+```
+
+
+### host side
 
 The timestamp you get from an AUv3 in the `MIDIOutputEventBlock` should be an absolute sample time just like the mSampleTime passed in to your main render callback. Plugins not following this convention won't work correctly!
 
-You might rather want to know at which frame in the current buffer the event is timestamped. To convert an absolute sample tame to frame offset within the current buffer, you must subtract the `mSampleTime` associated with the current render cycle from it. In your main render callback, save the `inTimeStamp->mSampleTime` somewhere, and use it when converting the timestamp in your `MIDIOutputEventBlock`. Also make sure to clip it in case the AUv3 is sending events with invalid timestamps, outside the bounds of the current cycle. So save `inNumberFrames` as well for this purpose.
+In the host, you might rather want to know at which frame in the current buffer the event is timestamped. To convert an absolute sample time to frame offset within the current buffer, you must subtract the `mSampleTime` associated with the current render cycle from it. In your main render callback, save the `inTimeStamp->mSampleTime` somewhere, and use it when converting the timestamp in your `MIDIOutputEventBlock`. Also make sure to clip it in case the AUv3 is sending events with invalid timestamps, outside the bounds of the current cycle. So save `inNumberFrames` as well for this purpose.
 
 In your render callback:
 
@@ -30,7 +68,7 @@ THIS->_currentBufferSize = inNumberFrames;
 
 In the `MIDIOutputEventBlock`:
 
-```
+```C
 AUEventSampleTime now = 
     (AUEventSampleTime)_currentTimeStamp.mSampleTime;
 UInt32 offsetFrames =
@@ -43,8 +81,8 @@ The `offsetFrames` should then be stored together with the event for later use.
 
 Note that the `MIDIOutputEventBlock` will be called from the audio thread just like your render callback, so follow the rules of realtime safety! (No obj-c, swift, blocking, locks, memory allocations or file I/O).
 
-## Sending MIDI to an AUv3
-
+## MIDI from host to AUv3 plugin
+### host side
 Then, when sending MIDI to an AUv3, you use this relative frame offset (which is in the range 0 to `_currentBufferSize`) and add
 `AUEventSampleTimeImmediate` to it:
 
@@ -57,6 +95,47 @@ If you rather would store the original events absolute sample time, and subtract
 
 As the headers say about the timestamp in `AUScheduleMIDIEventBlock`: "The sample time (timestamp->mSampleTime) at which the MIDI event is to occur. When scheduling events during the render cycle (e.g. via a render observer) this time can be AUEventSampleTimeImmediate plus an optional buffer offset, in which case the event is scheduled at that position
 in the current render cycle.". However, as far as my tests have shown, it does *not* work to send absolute sample time in this case, even if the documentation implies that. So just use `AUScheduleMIDIEventBlock + offsetFrames` and make sure to schedule events from the audio thread, otherwise the timestamp can't be associated with the current render cycle.
+
+### plugin side
+
+An AU _instrument_ or _music effect_ plugin can receive the MIDI in its renderBlock by iterating the linked list passed in the `realtimeEventListHead` parameter. Here's an example function to handle incoming MIDI note events:
+
+```
+static void HandleMIDIEvents(__unsafe_unretained MyAudioPluginAudioUnit *THIS, const AURenderEvent *ev, Float64 mSampleTime) {
+    while (ev) {
+        if(ev->head.eventType == AURenderEventMIDI) {
+            AUMIDIEvent *m = (AUMIDIEvent*)ev;
+            uint8_t status = m->data[0] & 0xf0;
+            int offset = ev->head.eventSampleTime - mSampleTime;
+            if(status==0x80 || (status==0x90 && m->data[2]==0)) { // note-off or note-on with 0 velocity
+                // Handle note-offs here
+            } else if(status==0x90) { // note-on
+                // Handle note-ons here
+                // use `offset` to know at which sample in the current buffer the note should occur on
+            }
+            
+        }
+        ev = ev->head.next;
+    }
+}
+```
+
+It's called from within your render block like this:
+
+```
+- (AUInternalRenderBlock)internalRenderBlock {
+    // Capture in locals to avoid Obj-C member lookups. If "self" is captured in render, we're doing it wrong.
+    __unsafe_unretained MyAudioPluginAudioUnit *THIS = self;
+
+    return ^AUAudioUnitStatus(AudioUnitRenderActionFlags *actionFlags, const AudioTimeStamp *timestamp, AVAudioFrameCount frameCount, NSInteger outputBusNumber, AudioBufferList *outputData, const AURenderEvent *realtimeEventListHead, AURenderPullInputBlock pullInputBlock) {
+        // Do event handling and signal processing here.
+        
+        HandleMIDIEvents(THIS, realtimeEventListHead, timestamp->mSampleTime);
+        
+        // ...
+    };
+}
+```
 
 # Inter-App Audio nodes
 
