@@ -19,10 +19,10 @@
         <p>{{ site.description  }}</p>
         
         <img src="{{site.logo | relative_url}}" alt="Logo" />
-
 <ul>
     {% for link in site.data.sidebar %}
-    <li><a href="{{ link.url }}" {% if link.url == page.url %}class="active"{% endif %}>&#x226B; {{ link.title }}</a></li>
+    {% assign url2 = ".html" | prepend: link.url %}
+    <li><a href="{{ link.url }}" {% if link.url == page.url or url2 == page.url %}class="active"{% endif %}>&#x226B; {{ link.title }}</a></li>
     {% endfor %}
 </ul>
 
