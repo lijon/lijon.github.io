@@ -209,6 +209,31 @@ For virtual inputs, you can set `kMIDIPropertyAdvanceScheduleTimeMuSec` to a non
 Sometimes you might receive multiple MIDI events in the same data array, and you need to split them up into separate events. For example, AUv3 midi output can contain multiple events in the same byte buffer. Here's a simple and fast function to do just that:
 
 ```
+/****************************************************************************
+SplitMIDIEvents
+
+MIT License
+
+Copyright (c) 2018 Jonatan Liljedahl
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+****************************************************************************/
 void SplitMIDIEvents(MyMIDISource *src, MyMIDIPacket *ev) {
     if(ev->length==0) return;
     const UInt8 *data = ev->data;
@@ -220,7 +245,7 @@ void SplitMIDIEvents(MyMIDISource *src, MyMIDIPacket *ev) {
     const UInt8 *p = data+1;
     while(1) {
         if((*p & 0x80) || p==end) {
-            AUMMIDIPacket ev2 = {
+            MyMIDIPacket ev2 = {
                 .timestamp = ev->timestamp,
                 .length = p-data,
                 .data = data,
