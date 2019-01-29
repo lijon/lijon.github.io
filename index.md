@@ -5,6 +5,9 @@ layout: default
 
 # iOS Audio
 
+[AUv3 Parameters](/auv3_parameters)  
+The basics about AUv3 parameters.
+
 [iOS MIDI timestamps](/ios_midi_timestamps)  
 Timestamping done right for AUv3, IAA and a bit about CoreMIDI.
 
